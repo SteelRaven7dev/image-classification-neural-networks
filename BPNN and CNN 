@@ -1,0 +1,610 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/SteelRaven7dev/image-classification-neural-networks/blob/main/BPNN%20and%20CNN%20\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "CIP1zspULtrE"
+      },
+      "source": [
+        "# **CNN**"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "HS9MW4bNLskL"
+      },
+      "outputs": [],
+      "source": [
+        "# import the required modules\n",
+        "from numpy import unique, argmax\n",
+        "from tensorflow.keras.datasets.fashion_mnist import load_data\n",
+        "from tensorflow.keras import Sequential\n",
+        "from tensorflow.keras.layers import Conv2D\n",
+        "from tensorflow.keras.layers import MaxPool2D\n",
+        "from tensorflow.keras.layers import Dense\n",
+        "from tensorflow.keras.layers import Flatten\n",
+        "from tensorflow.keras.layers import Dropout\n",
+        "from sklearn.metrics import classification_report\n",
+        "\n",
+        "from tensorflow.keras.utils import plot_model\n",
+        "from matplotlib import pyplot\n",
+        "import matplotlib.pyplot as plt\n",
+        "import numpy as np"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "nHgKRpGLL1c4"
+      },
+      "outputs": [],
+      "source": [
+        "# loading the MNIST dataset\n",
+        "(x_train, y_train), (x_test, y_test) = load_data()\n",
+        "\n",
+        "# reshaping the training and testing data \n",
+        "x_train = x_train.reshape((x_train.shape[0], x_train.shape[1],x_train.shape[2], 1))\n",
+        "x_test = x_test.reshape((x_test.shape[0], x_test.shape[1], x_test.shape[2], 1))"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "f5ECPDKmL88y"
+      },
+      "outputs": [],
+      "source": [
+        "# scale the values of pixels of images\n",
+        "x_train = x_train.astype('float32') / 255.0\n",
+        "x_test = x_test.astype('float32') / 255.0"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "w1sA01zfL9Sw"
+      },
+      "outputs": [],
+      "source": [
+        "fig = plt.figure(figsize=(15,3))\n",
+        "for i in range(20):\n",
+        " ax = fig.add_subplot(2,10, i+1, xticks=[], yticks=[])\n",
+        " ax.imshow(np.squeeze(x_train[i]), cmap='gray')\n",
+        " ax.set_title(y_train[i])"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "hwRVnhzrMAWi"
+      },
+      "outputs": [],
+      "source": [
+        "# define the shape of the input images\n",
+        "inp_shape = x_train.shape[1:]\n",
+        "print(inp_shape)\n",
+        "\n",
+        "# defining the CNN model with two convolutional layers\n",
+        "n_filters = 48  #vary the number of feature maps\n",
+        "filter_size = (3,3)\n",
+        "model = Sequential()\n",
+        "model.add(Conv2D(n_filters, filter_size, activation='relu', input_shape=inp_shape))\n",
+        "model.add(MaxPool2D((2, 2)))\n",
+        "\n",
+        "n_filters = 48    #vary the number of feature maps\n",
+        "filter_size = (3,3)\n",
+        "model.add(Conv2D(n_filters, filter_size, activation='relu'))\n",
+        "model.add(MaxPool2D((2, 2)))\n",
+        "#model.add(Dropout(0.5))  #sometimes may want to drop out a percentage of the neurons\n",
+        "\n",
+        "#flatten CNN output down to a vector then output to a two layer BPNN\n",
+        "model.add(Flatten()) #convert to vector\n",
+        "model.add(Dense(10, activation='tanh'))\n",
+        "model.add(Dense(10, activation='relu'))\n",
+        "model.add(Dense(10, activation='softmax'))\n",
+        "model.summary()\n",
+        " #vary # of neurons/nodes per activation function\n",
+        "\n",
+        "#model.add(Dense(10, activation='softmax'))\n",
+        "#model.add(Dense(10, activation = 'tanh'))\n",
+        "#model.add(Dense(10, activation = 'softmax'))\n",
+        "#model.add(Dense(10, activation = 'softmax'))\n",
+        "#model.add(Dense(10, activation = 'tanh'))\n",
+        "#model.add(Dense(10, activation = 'sigmoid'))\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "PoFE5RkaMOrL"
+      },
+      "outputs": [],
+      "source": [
+        "# ploting the model architecture\n",
+        "plot_model(model, 'model.png', show_shapes=True)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "hnhcb_MKMPE3"
+      },
+      "outputs": [],
+      "source": [
+        "# define loss and optimizer\n",
+        "model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])\n",
+        "\n",
+        "# fit the model\n",
+        "history = model.fit(x_train, y_train, epochs=20, batch_size=100, verbose=1, validation_split=0.1)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "uI0DlklOOVEo"
+      },
+      "outputs": [],
+      "source": [
+        "# ploting the learning curves\n",
+        "pyplot.title('Learning Curves')\n",
+        "pyplot.xlabel('Epochs')\n",
+        "pyplot.ylabel('Cross Entropy')\n",
+        "pyplot.plot(history.history['loss'], label='train')\n",
+        "pyplot.plot(history.history['val_loss'], label='val')\n",
+        "pyplot.legend()\n",
+        "pyplot.show()"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "EtFCpw58QMcS",
+        "outputId": "d5d514ca-540e-4961-dce8-48fd8b007801"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "313/313 [==============================] - 1s 4ms/step - loss: 0.2924 - accuracy: 0.8996\n",
+            "Accuracy (%): 89.96000289916992\n"
+          ]
+        }
+      ],
+      "source": [
+        "# evaluate the model\n",
+        "loss, accuracy = model.evaluate(x_test, y_test, verbose=1)\n",
+        "print(f'Accuracy (%): {accuracy*100}')"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "dFgbwbVuQM0A"
+      },
+      "outputs": [],
+      "source": [
+        "#display the image being predicted\n",
+        "image = x_train[0]\n",
+        "plt.imshow(np.squeeze(image), cmap='gray') #this image is from class 9 ( this stays constant) \n",
+        "# 0 T-shirt/top\n",
+        "# 1 Trouser\n",
+        "# 2 Pullover\n",
+        "# 3 Dress\n",
+        "# 4 Coat\n",
+        "# 5 Sandal\n",
+        "# 6 Shirt\n",
+        "# 7 Sneaker\n",
+        "# 8 Bag\n",
+        "# 9 Ankle boot\n",
+        "\n",
+        "class_num_to_name = {0:\"T-shirt/top\", 1:\"Trouser\", 2:\"Pullover\", 3:\"Dress\", 4:\"Coat\", 5:\"Sandal\", 6:\"Shirt\", 7:\"Sneaker\", 8:\"Bag\", 9:\"Ankle boot\"}"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "MoqVCswzAiem",
+        "outputId": "d6ca152e-7e86-42bf-bfd2-e45d89cdc11e"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "(10000, 28, 28, 1)\n"
+          ]
+        }
+      ],
+      "source": [
+        "print(x_test.shape)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "3hR1aM8LQOOc",
+        "outputId": "58cd48e1-37e3-4f1a-ee9c-fab29d36884f"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "1/1 [==============================] - 0s 131ms/step\n",
+            "Predicted: 9\n"
+          ]
+        }
+      ],
+      "source": [
+        "# make a prediction\n",
+        "# reshaping the image for model input\n",
+        "image= image.reshape(1,image.shape[0],image.shape[1],image.shape[2])\n",
+        "# predicting the label of image\n",
+        "yhat = model.predict([image])\n",
+        "print('Predicted: {}'.format(argmax(yhat)))\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "In8l2H1YBVM8"
+      },
+      "outputs": [],
+      "source": [
+        "y_pred = model.predict(x_test)\n",
+        "y_pred_cat = np.argmax(y_pred, axis=1)\n",
+        "print(y_pred_cat.shape)\n",
+        "\n",
+        "\n",
+        "classreport = classification_report(y_test, y_pred_cat, output_dict = True)\n",
+        "print(classreport)\n",
+        "\n",
+        "print(classreport[\"weighted avg\"]) # weighted avg takes into account distribution of classes over test set, in this case 10 classes over 10,000 so macro avg and weighted avg are equal\n",
+        "print(classreport[\"accuracy\"])\n",
+        "print(\"^^^^ accuracy \")\n",
+        "\n",
+        "\n",
+        "# Some code to viz some images and their labels\n",
+        "print(\"shape y pred cat\", y_pred_cat.shape)\n",
+        "NUM_IMAGES_TO_VIZ = 10\n",
+        "random_indices = np.random.choice(x_test.shape[0], NUM_IMAGES_TO_VIZ, replace=False)\n",
+        "x_test_to_viz = x_test[random_indices, :, :, 0]\n",
+        "y_pred_to_viz = y_pred_cat[random_indices]\n",
+        "y_test_to_viz = y_test[random_indices]\n",
+        "print(\"y_pred_to_viz.shape\", y_pred_to_viz.shape)\n",
+        "print(y_pred_to_viz)\n",
+        "\n",
+        "fig = plt.figure(figsize=(15,3))\n",
+        "for i in range(NUM_IMAGES_TO_VIZ):\n",
+        " ax = fig.add_subplot(1,NUM_IMAGES_TO_VIZ, i+1, xticks=[], yticks=[])\n",
+        " ax.imshow(x_test_to_viz[i].reshape(28, 28), cmap='gray')\n",
+        " ax.set_title(f\"P: {class_num_to_name[y_pred_to_viz[i]]}\\n A:{class_num_to_name[y_test_to_viz[i]]}\")"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "YvRkU6xvmqY7"
+      },
+      "source": [
+        "# **BPNN**"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "C6ksAhAqmsDk",
+        "outputId": "5118aafb-8710-4e76-8b9c-002e185bdb8b"
+      },
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "1.21.6\n"
+          ]
+        }
+      ],
+      "source": [
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "from sklearn.model_selection import train_test_split  \n",
+        "from sklearn.metrics import mean_squared_error\n",
+        "\n",
+        "from keras.models import Sequential\n",
+        "from keras.layers import Dense\n",
+        "from keras.datasets import fashion_mnist\n",
+        "\n",
+        "from tensorflow.keras.utils import to_categorical\n",
+        "import os\n",
+        "import psutil\n",
+        "from sklearn.metrics import classification_report\n",
+        "print(np.__version__) # to print the version of any module, use the print([whatever you called it as].__version__) tensor and numpy versions may be out of sync"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "VtOQ8SWK-MD_"
+      },
+      "outputs": [],
+      "source": [
+        "# 0 T-shirt/top\n",
+        "# 1 Trouser\n",
+        "# 2 Pullover\n",
+        "# 3 Dress\n",
+        "# 4 Coat\n",
+        "# 5 Sandal\n",
+        "# 6 Shirt\n",
+        "# 7 Sneaker\n",
+        "# 8 Bag\n",
+        "# 9 Ankle boot\n",
+        "\n",
+        "class_num_to_name = {0:\"T-shirt/top\", 1:\"Trouser\", 2:\"Pullover\", 3:\"Dress\", 4:\"Coat\", 5:\"Sandal\", 6:\"Shirt\", 7:\"Sneaker\", 8:\"Bag\", 9:\"Ankle boot\"}\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "mSj9y5tamvQm"
+      },
+      "outputs": [],
+      "source": [
+        "\"\"\"\n",
+        "Start BPNN code\n",
+        "Using the \"coat\" classifier here\n",
+        "\"\"\"\n",
+        "data = fashion_mnist.load_data()\n",
+        "\n",
+        "#split the data into training and test data\n",
+        "(X_train, y_train_coat), (X_test, y_test_coat) = data\n",
+        "print(\"Some image data from the first image\", X_train[0,:,:])\n",
+        "print(\"Digit Classification of the first 10 images\", y_train_coat[:10])\n",
+        "print(\"Image shape\", X_train[0].shape)\n",
+        "print(\"X_train shape\", X_train.shape)\n",
+        "print(\"y_train shape\", y_train_coat.shape)\n",
+        "print(\"X_test shape\", X_test.shape)\n",
+        "print(\"y_test shape\", y_test_coat.shape)\n",
+        "print()\n",
+        "#scale the X images\n",
+        "X_train = X_train / 255\n",
+        "X_test = X_test / 255"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "3h4EGinimyJG"
+      },
+      "outputs": [],
+      "source": [
+        "fig = plt.figure(figsize=(15,3))\n",
+        "for i in range(20):\n",
+        " ax = fig.add_subplot(2,10, i+1, xticks=[], yticks=[])\n",
+        " ax.imshow(X_train[i], cmap='gray')\n",
+        " ax.set_title(y_train_coat[i])"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "xOGduZm6m0lO"
+      },
+      "outputs": [],
+      "source": [
+        "#Reshape the data to convert each image into a vector of length 784 (eg)\n",
+        "# this is in order to feed the data into a BPNN\n",
+        "X_train = X_train.reshape((X_train.shape[0], 28*28)).astype('float32')\n",
+        "X_test = X_test.reshape((X_test.shape[0], 28*28)).astype('float32') \n",
+        "print('After reshaping')\n",
+        "print(\"Image shape\", X_train[0].shape)\n",
+        "print(\"X_train shape\", X_train.shape)\n",
+        "print(\"y_train shape\", y_train_coat.shape)\n",
+        "print(\"X_test shape\", X_test.shape)\n",
+        "print(\"y_test shape\", y_test_coat.shape) "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "9jQ9JiXrm2R2"
+      },
+      "outputs": [],
+      "source": [
+        "#Convert y categories into one hot encoded matrix\n",
+        "y_train = to_categorical(y_train_coat)\n",
+        "y_test = to_categorical(y_test_coat)\n",
+        "print(\"y_train shape\", y_train.shape)\n",
+        "print(\"y_test shape\", y_test.shape) "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "nX5K3m_9m31l"
+      },
+      "outputs": [],
+      "source": [
+        "#build the model \n",
+        "model = Sequential()\n",
+        "\n",
+        "model.add(Dense(10, input_dim = 28 * 28, activation= 'sigmoid'))  #the number of neurons should be constant when testing \n",
+        "\n",
+        "\"\"\"\n",
+        "model.add(Dense(10, activation = 'relu'))\n",
+        "model.add(Dense(10, activation = 'tanh')) \n",
+        "model.add(Dense(50, input_dim = 28 * 28, activation= 'relu'))\n",
+        "model.add(Dense(50, activation= 'relu'))\n",
+        "model.add(Dense(10, activation = 'softmax'))  #Softmax means output probability of each possible digit\n",
+        "\"\"\"\n",
+        "#complile the model'rmsprop'\n",
+        "model.compile(loss= 'mse', metrics=['accuracy'], optimizer='adam') #you can customize loss function (mse, categorical cross entropy, etc)\n",
+        "#Loss function: Cross entropy is used with probabilities suchas softmax\n",
+        "#Accuracy = Number of correct predictions/total number of predictions\n",
+        "\n",
+        "#train the model and plot\n",
+        "history = model.fit(X_train, y_train, epochs=50, batch_size=100, verbose=1, validation_split=0.1) # run tests on own pc with more epochs, 200 is enough for my results.\n",
+        "plt.title('Learning Curves')\n",
+        "plt.xlabel('Epochs')\n",
+        "plt.ylabel('Cross Entropy')\n",
+        "plt.plot(history.history['loss'], label='train')\n",
+        "plt.plot(history.history['val_loss'], label='val')\n",
+        "plt.legend()\n",
+        "plt.show() \n",
+        "\n",
+        "\n",
+        "model.summary()\n",
+        "#'categorical_crossentropy' use this loss function if softmax is anywhere, loss function is relative to the gradient descent after every epoch. "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "XB8-Y5BBm5ur"
+      },
+      "outputs": [],
+      "source": [
+        "#Evaluate the model using the test set ...\n",
+        "score = model.evaluate(X_test,y_test)\n",
+        "print('Accuracy:', 100*score[1])  #score[1] = Accuracy = Number of correct predictions/total number of predictions\n",
+        "                                  #(score[0] = loss)\n",
+        "\n",
+        "y_pred = model.predict(X_test)\n",
+        "print(y_test_coat)\n",
+        "print(np.argmax(y_pred, axis=1))  #find indexof the output neuron with the maximum value\n",
+        "print(y_pred.shape)\n",
+        "print(y_test.shape)\n",
+        "y_test_cat = (np.argmax(y_test, axis=1))\n",
+        "y_pred_cat = (np.argmax(y_pred, axis=1))\n",
+        "\n",
+        "# Some code to viz some images and their labels\n",
+        "print(X_test.shape)\n",
+        "print(\"shape y pred cat\", y_pred_cat.shape)\n",
+        "NUM_IMAGES_TO_VIZ = 10\n",
+        "random_indices = np.random.choice(X_test.shape[0], NUM_IMAGES_TO_VIZ, replace=False)\n",
+        "x_test_to_viz = X_test[random_indices, :]\n",
+        "y_pred_to_viz = y_pred_cat[random_indices]\n",
+        "y_test_to_viz = y_test_coat[random_indices]\n",
+        "print(\"y_pred_to_viz.shape\", y_pred_to_viz.shape)\n",
+        "print(y_pred_to_viz)\n",
+        "\n",
+        "fig = plt.figure(figsize=(15,3))\n",
+        "for i in range(NUM_IMAGES_TO_VIZ):\n",
+        " ax = fig.add_subplot(1,10, i+1, xticks=[], yticks=[])\n",
+        " ax.imshow(x_test_to_viz[i].reshape(28, 28), cmap='gray')\n",
+        " ax.set_title(f\"P: {class_num_to_name[y_pred_to_viz[i]]}\\n A:{class_num_to_name[y_test_to_viz[i]]}\")\n",
+        "\n",
+        "\n",
+        "classreport = classification_report(y_test_cat, y_pred_cat, output_dict = True)\n",
+        "print(classreport)\n",
+        "\n",
+        "print(classreport[\"weighted avg\"]) # weighted avg takes into account distribution of classes over test set, in this case 10 classes over 10,000 so macro avg and weighted avg are equal\n",
+        "print(classreport[\"accuracy\"])\n",
+        "print(\"^^^^ accuracy \")\n",
+        "# all_precision = []\n",
+        "# all_f_1 = []\n",
+        "# all_recall = []\n",
+        "\n",
+        "# for ele in classreport : \n",
+        "  \n",
+        "#   try:\n",
+        "#     class_num = int(ele)\n",
+        "#     precision = classreport[ele]['precision']\n",
+        "#     f_1 = classreport[ele]['f1-score']\n",
+        "#     recall = classreport[ele]['recall']\n",
+        "\n",
+        "#     all_precision.append(precision)\n",
+        "#     all_f_1.append(f_1)\n",
+        "#     all_recall.append(recall)\n",
+        "#   except:\n",
+        "#     print(\"this broke it\", ele)\n",
+        "  \n",
+        "  "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "gWoZX5x4tO8t"
+      },
+      "outputs": [],
+      "source": [
+        "#display the image being predicted\n",
+        "image = x_train[0]\n",
+        "plt.imshow(np.squeeze(image), cmap='gray') #this image is from class 9 ( this stays constant) \n",
+        "# make a prediction\n",
+        "# reshaping the image for model input\n",
+        " # image= image.reshape(1,image.shape[0],image.shape[1],image.shape[2])\n",
+        "# predicting the label of image\n",
+        "\n",
+        "image= image.reshape(1,784)\n",
+        "yhat = model.predict([image])\n",
+        "print('Predicted: {}'.format(argmax(yhat)))"
+      ]
+    }
+  ],
+  "metadata": {
+    "accelerator": "GPU",
+    "colab": {
+      "provenance": [],
+      "include_colab_link": true
+    },
+    "gpuClass": "standard",
+    "kernelspec": {
+      "display_name": "Python 3",
+      "name": "python3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
